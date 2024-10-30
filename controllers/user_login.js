@@ -83,3 +83,8 @@ const user_signin = async(req , res) => {
         return res.status(500).json({ message: "Internal server error", error });
     }
 }
+
+module.exports = {
+    user_signup,
+    user_signin
+}
