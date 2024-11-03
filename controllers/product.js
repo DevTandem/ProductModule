@@ -55,7 +55,7 @@ const update_product = async (req,res) => {
         
         const product_detail = await prisma.product.findUnique({
             where: {
-                id: productId
+                id: parseInt(productId)
             }
         })
 
@@ -70,7 +70,7 @@ const update_product = async (req,res) => {
         else{
             const product = await prisma.product.update({
                 where:{
-                    id : productId
+                    id : parseInt(productId)
                 },
                 data:{
                     qty: rem_qty
@@ -81,7 +81,7 @@ const update_product = async (req,res) => {
 
             const log = await prisma.log_maintain.create({
                 data:{
-                    productId: productId,
+                    productId: parseInt(productId),
                     userId: user.id,
                     previous_qty: product_detail.qty,
                     new_qty: rem_qty,

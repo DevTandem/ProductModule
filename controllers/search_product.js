@@ -4,6 +4,7 @@ const prisma = new PrismaClient()
 const get_products = async(req , res ) => {
     const {search_keyword , pricing} = req.query
     const obj = req.user
+    console.log("search keyowrd" , search_keyword)
     try {
 
         if(!obj){
@@ -13,13 +14,22 @@ const get_products = async(req , res ) => {
         if(pricing){
             const products = await prisma.product.findMany({
                 where : {
-                    c_name : {
-                        contains : search_keyword || ""
-                    },
+                    OR:[
+                        {s_name : {
+                            contains : search_keyword || "",
+                            mode: 'insensitive'
+                        },},
+                    
+                        {c_name : {
+                            contains : search_keyword || "",
+                            mode: 'insensitive'
+                        },}
+                    ],
+                    
     
                     price : {
-                        gt : parseFloat(pricing)-100.00,
-                        lt : parseFloat(pricing)+100.00 
+                        gt : parseFloat(pricing)*0.9,
+                        lt : parseFloat(pricing)*1.1
                     }
                 },
                 take : 10
@@ -30,9 +40,18 @@ const get_products = async(req , res ) => {
         else {
             const products = await prisma.product.findMany({
                 where : {
-                    c_name : {
-                        contains : search_keyword || ""
-                    },
+                    OR:[
+                        {s_name : {
+                            contains : search_keyword || "",
+                            mode: 'insensitive'
+                        },},
+                    
+                        {c_name : {
+                            contains : search_keyword || "",
+                            mode: 'insensitive'
+                        },}
+                    ],
+                    
                 },
                 take : 10
             })
