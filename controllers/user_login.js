@@ -1,5 +1,3 @@
-const {PrismaClient} = require("@prisma/client")
-const prisma = new PrismaClient();
 const bcrypt = require("bcryptjs")
 const {generate_token} = require("../utils/generate_token")
 
@@ -14,10 +12,8 @@ const user_signup = async(req , res) => {
 
     try {
 
-        const check_email = await prisma.userLogin.findUnique({
-            where : {
+        const check_email = await user_model.findOne({
                 email : email
-            }
         })
 
         if(check_email){
@@ -26,12 +22,10 @@ const user_signup = async(req , res) => {
 
         const hashedPassword = bcrypt.hashSync(password);
 
-        const user = await prisma.userLogin.create({
-            data : {
+        const user = await user_model.create({
                 name : name , 
                 email : email,
                 password : hashedPassword
-            }
         })
 
         if (!user) {
@@ -54,10 +48,8 @@ const user_signin = async(req , res) => {
 
     try {
 
-        const check_user = await prisma.userLogin.findUnique({
-            where : {
+        const check_user = await user_model.findOne({
                 email : email
-            }
         })
 
         if (!check_user) {
