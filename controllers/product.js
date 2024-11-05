@@ -1,44 +1,62 @@
-const {PrismaClient} = require("@prisma/client")
-const prisma = new PrismaClient();
+// const {PrismaClient} = require("@prisma/client")
+// const prisma = new PrismaClient();
 
 const product_model = require("../model/product_model")
 const log_model = require("../model/log_maintain")
 
-const create_product = async (req,res) => {
-    const {c_name, s_name, qty, price, description} = req.body
-    const owner = req.user
+const create_product = async (req, res) => {
+    const { c_name, s_name, qty, price, description, colour , characteristics} = req.body;
+    const owner = req.user;
 
-    if(!owner){
-        return res.status(404).json({message: "User not found"})
+    if (!owner) {
+        return res.status(404).json({ message: "User not found" });
     }
 
-    if(!c_name || ! s_name || !qty || !price){
-        return res.status(400).json({message: "All fields must be provided"})
+    if (!c_name || !s_name || !qty || !price) {
+        return res.status(400).json({ message: "All fields must be provided" });
     }
-    
+
     try {
-        const product = await prisma.product.create({
-            data:{
-                c_name: c_name,
-                s_name: s_name,
-                qty: qty,
-                price: price,
-                description: description,
-                ownerId: owner.id
-            }
-        })
+        // Process colours and calculate total qty (no duplicate check for colours)
+        var check_qty = 0;
 
-        if(!product)
-            return res.status(400).json({message: "Error occured while creation of product"})
+        const colours = colour.map((name, index) => ({
+            colour_name: name["colour_name"],
+            colour_qty: parseInt(colour[index]["colour_qty"]),
+        }));
 
-        return res.status(200).json({message: "Prouduct", product})
+        colours.forEach(colour => {
+            check_qty = parseInt(colour["colour_qty"]) + check_qty;
+        });
 
+        if(check_qty!=qty ){
+            return res.status(400).json({ message: "Quantity does not match" });
+        }
+        // Create product object
+        const product = new product_model({
+            owner_id: owner.id,
+            c_name: c_name,
+            s_name: s_name,
+            price: price,
+            qty: qty,
+            colour: colours, 
+            characteristics : characteristics
+        });
+
+        // Save the product
+        await product.save();
+
+        if (!product) {
+            return res.status(400).json({ message: "Error occurred while creating the product" });
+        }
+
+        console.log("Products : " , product)
+        return res.status(200).json({ message: "Product created successfully", product });
     } catch (error) {
-        console.log(error)
+        console.log(error);
         return res.status(500).json({ message: "Internal server error", error });
-
     }
-}
+};
 
 
 const update_product = async (req,res) => {
