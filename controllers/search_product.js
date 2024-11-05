@@ -1,5 +1,3 @@
-// const {PrismaClient} = require("@prisma/client")
-// const prisma = new PrismaClient()
 
 const product_model = require("../model/product_model");
 
@@ -50,10 +48,9 @@ const get_products = async (req, res) => {
 
         console.log("prod", products);
 
-        // Create a dynamic list of unique characteristics from the matched products
         const characteristicsList = {};
         products.forEach(product => {
-            if (product.characteristics) { // Check if characteristics exist
+            if (product.characteristics) { 
                 for (const [key, value] of Object.entries(product.characteristics)) {
                     if (!characteristicsList[key]) {
                         characteristicsList[key] = new Set();
@@ -63,15 +60,13 @@ const get_products = async (req, res) => {
             }
         });
 
-        // Convert characteristic Sets to arrays for easier frontend handling
         Object.keys(characteristicsList).forEach(key => {
             characteristicsList[key] = Array.from(characteristicsList[key]);
         });
 
-        // Apply additional filtering if specific characteristics are provided
         let filteredProducts = products;
         if (characteristics) {
-            const selectedCharacteristics = JSON.parse(characteristics); // Expect JSON format in query, e.g., '{"color": "red", "size": "large"}'
+            const selectedCharacteristics = JSON.parse(characteristics); 
             filteredProducts = products.filter(product => {
                 return product.characteristics && Object.entries(selectedCharacteristics).every(([key, value]) => {
                     return product.characteristics[key] === value;
@@ -79,7 +74,6 @@ const get_products = async (req, res) => {
             });
         }
 
-        // Filter color matches within the color array of each product if `colour` is specified
         if (colour) {
             filteredProducts = filteredProducts.map(product => {
                 if (product.colour && Array.isArray(product.colour)) {
@@ -95,7 +89,7 @@ const get_products = async (req, res) => {
         return res.status(200).json({ 
             message: "Products found", 
             products: filteredProducts, 
-            characteristicsList // Dynamic list of characteristics for filtering
+            characteristicsList 
         });
     } catch (error) {
         console.log(error);
