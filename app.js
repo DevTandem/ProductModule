@@ -1,5 +1,6 @@
 const express = require("express");
 const { client } = require("./config/db");
+const mongoose = require("mongoose")
 
 const app = express();
 
@@ -23,3 +24,11 @@ client.connect().then(() => {
 }).catch((err) => {
     console.log(err);
 });
+
+mongoose.connect(process.env.Mongo_URL)
+    .then(() => {
+        console.log("Connected to database successfully")
+    })
+    .catch((err) => {
+        console.error("Failed to connect to the database", err)
+    });

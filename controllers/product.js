@@ -1,6 +1,9 @@
 const {PrismaClient} = require("@prisma/client")
 const prisma = new PrismaClient();
 
+const product_model = require("../model/product_model")
+const log_model = require("../model/log_maintain")
+
 const create_product = async (req,res) => {
     const {c_name, s_name, qty, price, description} = req.body
     const owner = req.user

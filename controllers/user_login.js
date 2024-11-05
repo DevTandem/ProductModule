@@ -3,6 +3,8 @@ const prisma = new PrismaClient();
 const bcrypt = require("bcryptjs")
 const {generate_token} = require("../utils/generate_token")
 
+const user_model = require("../model/user_model")
+
 const user_signup = async(req , res) => {
     const {name , email , password } = req.body
 

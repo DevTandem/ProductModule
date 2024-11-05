@@ -23,7 +23,12 @@ const get_products = async(req , res ) => {
                         {c_name : {
                             contains : search_keyword || "",
                             mode: 'insensitive'
-                        },}
+                        },},
+
+                        {description : {
+                            contains : search_keyword || "",
+                            mode: 'insensitive'
+                        },},
                     ],
                     
     
@@ -49,7 +54,12 @@ const get_products = async(req , res ) => {
                         {c_name : {
                             contains : search_keyword || "",
                             mode: 'insensitive'
-                        },}
+                        },},
+
+                        {description : {
+                            contains : search_keyword || "",
+                            mode: 'insensitive'
+                        },},
                     ],
                     
                 },
