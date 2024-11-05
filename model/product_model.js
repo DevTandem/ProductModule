@@ -6,7 +6,7 @@ const colour_schema = new mongoose.Schema(
             type : String
         },
 
-        qty : {
+        colour_qty : {
             type : Number
         }
     }
@@ -21,8 +21,7 @@ const product = new mongoose.Schema(
 
         c_name : {
             type : String,
-            required : true,
-            unique : true
+            required : true
         },
 
         s_name : {
@@ -40,13 +39,13 @@ const product = new mongoose.Schema(
             required : true
         },
 
-        colours : [colour_schema],
+        colour : [colour_schema],
 
-        characterisitic : {
+        characteristics : {
             type : Map,
             of : String
         }
-        
+
     },
     {timestamps : true}
 )
