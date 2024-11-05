@@ -4,10 +4,6 @@ const colour_schema = new mongoose.Schema(
     {
         colour_name : {
             type : String
-        },
-
-        colour_qty : {
-            type : Number
         }
     }
 )
@@ -29,13 +25,17 @@ const product = new mongoose.Schema(
             required : true
         },
 
+        description : {
+            type : String,
+        },
+
         price : {
             type : String,
             required : true
         },
 
         qty : {
-            type : String,
+            type : Number,
             required : true
         },
 
