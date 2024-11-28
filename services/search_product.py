@@ -7,21 +7,17 @@ import re
 import sys
 import json
 
-# Load environment variables
 load_dotenv()
 
 MONGODB_URI = os.getenv("Mongo_URL")
 DB_NAME = os.getenv("DB_NAME")
 
-# MongoDB connection
 client = MongoClient(MONGODB_URI)
 db = client[DB_NAME]
 products_collection = db["products"]
 
-# Load embedding model
 model = SentenceTransformer('all-MiniLM-L6-v2')
 
-# Helper function: Create embedding for a query
 def generate_query_embedding(query):
     return model.encode(query).tolist()
 
@@ -34,14 +30,11 @@ def extract_price_constraints(query):
     return None, None
 
 def search_products(user_query, top_k=5):
-    # Step 1: Extract price constraints
     direction, amount = extract_price_constraints(user_query)
     textual_query = re.sub(r'(under|below|above|over)\s*\d+', '', user_query).strip()
 
-    # Step 2: Generate embedding for the textual query
     query_embedding = generate_query_embedding(textual_query)
 
-    # Step 3: Perform vector search
     pipeline = [
         {
             "$search": {
@@ -67,10 +60,8 @@ def search_products(user_query, top_k=5):
         }
     ]
 
-    # Execute vector search
     results = list(products_collection.aggregate(pipeline))
 
-    # Step 4: Apply price filtering if necessary
     if direction and amount:
         if direction in ["under", "below"]:
             results = [res for res in results if float(res.get("price", float('inf'))) < amount]
@@ -80,9 +71,7 @@ def search_products(user_query, top_k=5):
     return results
 
 if __name__ == "__main__":
-    # Read search keyword from stdin
     user_query = sys.stdin.read().strip()
 
-    # Perform search and output results
     results = search_products(user_query, top_k=5)
-    print(json.dumps(results))  # Output results as JSON
+    print(json.dumps(results))  

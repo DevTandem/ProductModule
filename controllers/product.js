@@ -16,13 +16,10 @@ const create_product = async (req, res) => {
     }
 
     try {
-        // Generate the product text format
         const productText = `${c_name} ${s_name} ${description || ""} ${Array.isArray(colour) ? colour.join(', ') : ""} color ${Object.entries(characteristics || {}).map(([key, value]) => `${key} ${value}`).join(' ')}`;
 
-        // Call Python script to generate embedding
         const embedding = await callPythonForEmbedding(productText);
 
-        // Create the product with the embedding
         const product = new product_model({
             owner_id: owner.id,
             c_name: c_name,
@@ -32,7 +29,7 @@ const create_product = async (req, res) => {
             qty: qty,
             colour: colour,
             characteristics: characteristics,
-            embedding: embedding // Add embedding to the product
+            embedding: embedding 
         });
 
         await product.save();
@@ -49,33 +46,28 @@ const create_product = async (req, res) => {
     }
 };
 
-// Function to call Python script for generating embeddings
 const callPythonForEmbedding = (productText) => {
     return new Promise((resolve, reject) => {
-        const pythonProcess = spawn('python', ['services/generate_embedding.py']); // Replace with your Python script
+        const pythonProcess = spawn('python', ['services/generate_embedding.py']); 
 
         let output = '';
         let errorOutput = '';
 
-        // Send the product text to Python
         pythonProcess.stdin.write(productText);
         pythonProcess.stdin.end();
 
-        // Capture output from Python
         pythonProcess.stdout.on('data', (data) => {
             output += data.toString();
         });
 
-        // Capture errors from Python
         pythonProcess.stderr.on('data', (data) => {
             errorOutput += data.toString();
         });
 
-        // Handle Python process close
         pythonProcess.on('close', (code) => {
             if (code === 0) {
                 try {
-                    const embedding = JSON.parse(output); // Parse the JSON-encoded embedding
+                    const embedding = JSON.parse(output); 
                     resolve(embedding);
                 } catch (err) {
                     reject(new Error('Failed to parse embedding from Python'));
@@ -176,7 +168,6 @@ const modify_product = async (req, res) => {
     }
 
     try {
-        // Fetch the existing product details
         const product_detail = await product_model.findOne({
             _id: productId,
             owner_id: user.id
@@ -186,7 +177,6 @@ const modify_product = async (req, res) => {
             return res.status(404).json({ message: "Product not found" });
         }
 
-        // Prepare the update object
         let update = {};
         if (c_name) update["c_name"] = c_name;
         if (s_name) update["s_name"] = s_name;
@@ -194,7 +184,6 @@ const modify_product = async (req, res) => {
         if (colour) update["colour"] = colour;
         if (characteristics) update["characteristics"] = characteristics;
 
-        // Generate updated product text for embedding
         const productText = `${update.c_name || product_detail.c_name} ${
             update.s_name || product_detail.s_name
         } ${update.description || product_detail.description || ""} ${
@@ -207,13 +196,10 @@ const modify_product = async (req, res) => {
             .map(([key, value]) => `${key} ${value}`)
             .join(" ")}`;
 
-        // Call Python script to generate the new embedding
         const embedding = await callPythonForEmbedding(productText);
 
-        // Add embedding to the update object
         update["embedding"] = embedding;
 
-        // Update the product in the database
         const product = await product_model.findByIdAndUpdate(productId, update, { new: true });
 
         if (!product) {

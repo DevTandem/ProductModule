@@ -1,13 +1,5 @@
 const mongoose = require("mongoose")
 
-const colour_schema = new mongoose.Schema(
-    {
-        colour_name : {
-            type : String
-        }
-    }
-)
-
 const product = new mongoose.Schema(
     {  
         owner_id : {
