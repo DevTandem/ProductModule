@@ -1,8 +1,10 @@
 const product_model = require("../model/product_model")
-const log_model = require("../model/log_maintain")
+const log_model = require("../model/log_maintain");
+const { spawn } = require('child_process');
+
 
 const create_product = async (req, res) => {
-    const { c_name, s_name, qty, price, description, colour , characteristics} = req.body;
+    const { c_name, s_name, qty, price, description, colour, characteristics } = req.body;
     const owner = req.user;
 
     if (!owner) {
@@ -14,22 +16,23 @@ const create_product = async (req, res) => {
     }
 
     try {
-        var colours
-        if(colour.length){
-            colours = colour.map((name, index) => ({
-                colour_name: name["colour_name"],
-            }));
-        }
+        // Generate the product text format
+        const productText = `${c_name} ${s_name} ${description || ""} ${Array.isArray(colour) ? colour.join(', ') : ""} color ${Object.entries(characteristics || {}).map(([key, value]) => `${key} ${value}`).join(' ')}`;
 
+        // Call Python script to generate embedding
+        const embedding = await callPythonForEmbedding(productText);
+
+        // Create the product with the embedding
         const product = new product_model({
             owner_id: owner.id,
             c_name: c_name,
             s_name: s_name,
             price: price,
-            description: (!description) ? "" : description,
+            description: description || "",
             qty: qty,
-            colour: colours, 
-            characteristics : characteristics
+            colour: colour,
+            characteristics: characteristics,
+            embedding: embedding // Add embedding to the product
         });
 
         await product.save();
@@ -38,12 +41,50 @@ const create_product = async (req, res) => {
             return res.status(400).json({ message: "Error occurred while creating the product" });
         }
 
-        console.log("Products : " , product)
+        console.log("Product created:", product);
         return res.status(200).json({ message: "Product created successfully", product });
     } catch (error) {
-        console.log(error);
+        console.error(error);
         return res.status(500).json({ message: "Internal server error", error });
     }
+};
+
+// Function to call Python script for generating embeddings
+const callPythonForEmbedding = (productText) => {
+    return new Promise((resolve, reject) => {
+        const pythonProcess = spawn('python', ['services/generate_embedding.py']); // Replace with your Python script
+
+        let output = '';
+        let errorOutput = '';
+
+        // Send the product text to Python
+        pythonProcess.stdin.write(productText);
+        pythonProcess.stdin.end();
+
+        // Capture output from Python
+        pythonProcess.stdout.on('data', (data) => {
+            output += data.toString();
+        });
+
+        // Capture errors from Python
+        pythonProcess.stderr.on('data', (data) => {
+            errorOutput += data.toString();
+        });
+
+        // Handle Python process close
+        pythonProcess.on('close', (code) => {
+            if (code === 0) {
+                try {
+                    const embedding = JSON.parse(output); // Parse the JSON-encoded embedding
+                    resolve(embedding);
+                } catch (err) {
+                    reject(new Error('Failed to parse embedding from Python'));
+                }
+            } else {
+                reject(new Error(`Python script exited with code ${code}. Error: ${errorOutput}`));
+            }
+        });
+    });
 };
 
 
@@ -120,48 +161,72 @@ const update_product = async (req,res) => {
 }
 
 
-const modify_product = async (req,res)=>{
-    const {productId} = req.params
-    const {c_name, s_name, description} = req.body
+const modify_product = async (req, res) => {
+    const { productId } = req.params;
+    const { c_name, s_name, description, colour, characteristics } = req.body;
 
-    const user = req.user
+    const user = req.user;
 
-    if(!user){
-        return res.status(404).json({message: "User not found"})
+    if (!user) {
+        return res.status(404).json({ message: "User not found" });
     }
 
-    if(!c_name && !s_name && !description){
-        return res.status(400).json({message: "Enter the new name"})
+    if (!c_name && !s_name && !description && !colour && !characteristics) {
+        return res.status(400).json({ message: "Enter the fields to update" });
     }
 
     try {
+        // Fetch the existing product details
         const product_detail = await product_model.findOne({
-            _id: productId, owner_id: user.id
-        })
+            _id: productId,
+            owner_id: user.id
+        });
 
-        if(!product_detail){
-            return res.status(404).json({message: "Product not found"})
+        if (!product_detail) {
+            return res.status(404).json({ message: "Product not found" });
         }
 
-        var update = {}
-
+        // Prepare the update object
+        let update = {};
         if (c_name) update["c_name"] = c_name;
         if (s_name) update["s_name"] = s_name;
         if (description) update["description"] = description;
+        if (colour) update["colour"] = colour;
+        if (characteristics) update["characteristics"] = characteristics;
 
-        const product = await product_model.findByIdAndUpdate(productId, update , { new: true })
+        // Generate updated product text for embedding
+        const productText = `${update.c_name || product_detail.c_name} ${
+            update.s_name || product_detail.s_name
+        } ${update.description || product_detail.description || ""} ${
+            Array.isArray(update.colour || product_detail.colour)
+                ? (update.colour || product_detail.colour).join(", ")
+                : ""
+        } color ${Object.entries(
+            update.characteristics || product_detail.characteristics || {}
+        )
+            .map(([key, value]) => `${key} ${value}`)
+            .join(" ")}`;
 
-        if(!product)
-            return res.status(400).json({message: "Product's quantity not updated"})
+        // Call Python script to generate the new embedding
+        const embedding = await callPythonForEmbedding(productText);
 
-        return res.status(200).json({message: "Updated Successfully", product})
-        
+        // Add embedding to the update object
+        update["embedding"] = embedding;
+
+        // Update the product in the database
+        const product = await product_model.findByIdAndUpdate(productId, update, { new: true });
+
+        if (!product) {
+            return res.status(400).json({ message: "Product not updated" });
+        }
+
+        return res.status(200).json({ message: "Updated Successfully", product });
     } catch (error) {
-        console.log(error)
+        console.error(error);
         return res.status(500).json({ message: "Internal server error", error });
     }
+};
 
-}
 
 
 module.exports = {

@@ -39,12 +39,16 @@ const product = new mongoose.Schema(
             required : true
         },
 
-        colour : [colour_schema],
+        colour: {
+            type: [String],  
+          },
 
         characteristics : {
             type : Map,
             of : String
-        }
+        },
+
+        embedding : [Number]
 
     },
     {timestamps : true}
