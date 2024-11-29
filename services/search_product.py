@@ -29,7 +29,7 @@ def extract_price_constraints(query):
         return direction, amount
     return None, None
 
-def search_products(user_query, top_k=5):
+def search_products(user_query, top_k=3):
     direction, amount = extract_price_constraints(user_query)
     textual_query = re.sub(r'(under|below|above|over)\s*\d+', '', user_query).strip()
 
@@ -73,5 +73,5 @@ def search_products(user_query, top_k=5):
 if __name__ == "__main__":
     user_query = sys.stdin.read().strip()
 
-    results = search_products(user_query, top_k=5)
+    results = search_products(user_query, top_k=3)
     print(json.dumps(results))  

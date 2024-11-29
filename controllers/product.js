@@ -1,7 +1,7 @@
 const product_model = require("../model/product_model")
 const log_model = require("../model/log_maintain");
 const { spawn } = require('child_process');
-
+const axios = require('axios');
 
 const create_product = async (req, res) => {
     const { c_name, s_name, qty, price, description, colour, characteristics } = req.body;
@@ -46,39 +46,14 @@ const create_product = async (req, res) => {
     }
 };
 
-const callPythonForEmbedding = (productText) => {
-    return new Promise((resolve, reject) => {
-        const pythonProcess = spawn('python', ['services/generate_embedding.py']); 
-
-        let output = '';
-        let errorOutput = '';
-
-        pythonProcess.stdin.write(productText);
-        pythonProcess.stdin.end();
-
-        pythonProcess.stdout.on('data', (data) => {
-            output += data.toString();
-        });
-
-        pythonProcess.stderr.on('data', (data) => {
-            errorOutput += data.toString();
-        });
-
-        pythonProcess.on('close', (code) => {
-            if (code === 0) {
-                try {
-                    const embedding = JSON.parse(output); 
-                    resolve(embedding);
-                } catch (err) {
-                    reject(new Error('Failed to parse embedding from Python'));
-                }
-            } else {
-                reject(new Error(`Python script exited with code ${code}. Error: ${errorOutput}`));
-            }
-        });
-    });
+const callPythonForEmbedding = async (productText) => {
+    try {
+        const response = await axios.post('http://0.0.0.0:8000/generate_embedding/', { text: productText });
+        return response.data.embedding;
+    } catch (error) {
+        throw new Error('Failed to fetch embedding from Python service');
+    }
 };
-
 
 const update_product = async (req,res) => {
     const {productId} = req.params

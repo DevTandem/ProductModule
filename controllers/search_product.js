@@ -1,5 +1,6 @@
 const { spawn } = require('child_process');
 const product_model = require("../model/product_model");
+const axios = require('axios');
 
 const get_products = async (req, res) => {
     const { search_keyword, pricing, colour, characteristics } = req.query;
@@ -77,37 +78,16 @@ const get_products = async (req, res) => {
     }
 };
 
-const callPythonScript = (searchKeyword) => {
-    return new Promise((resolve, reject) => {
-        const pythonProcess = spawn('python', ['services/search_product.py']);
-
-        let output = '';
-        let errorOutput = '';
-
-        pythonProcess.stdin.write(searchKeyword);
-        pythonProcess.stdin.end();
-
-        pythonProcess.stdout.on('data', (data) => {
-            output += data.toString();
+const callPythonScript = async (searchKeyword) => {
+    try {
+        const response = await axios.post('http://0.0.0.0:8000/search_products/', {
+            query: searchKeyword,
+            top_k: 5, 
         });
-
-        pythonProcess.stderr.on('data', (data) => {
-            errorOutput += data.toString();
-        });
-
-        pythonProcess.on('close', (code) => {
-            if (code === 0) {
-                try {
-                    const result = JSON.parse(output);
-                    resolve(result);
-                } catch (err) {
-                    reject(new Error('Failed to parse JSON response from Python'));
-                }
-            } else {
-                reject(new Error(`Python script exited with code ${code}. Error: ${errorOutput}`));
-            }
-        });
-    });
+        return response.data.products;
+    } catch (error) {
+        throw new Error('Failed to fetch search results from Python service');
+    }
 };
 
 module.exports = {
