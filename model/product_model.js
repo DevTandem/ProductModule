@@ -26,11 +26,6 @@ const product = new mongoose.Schema(
             required : true
         },
 
-        qty : {
-            type : Number,
-            required : true
-        },
-
         colour: {
             type: [String],  
           },
