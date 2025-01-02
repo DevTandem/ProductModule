@@ -67,6 +67,11 @@ def search_products(user_query, top_k=5):
                 "characteristics": 1,
                 "score": {"$meta": "searchScore"}
             }
+        },
+        {
+            "$match": {
+                "score": {"$gt": 0.55}
+            }
         }
     ]
 

@@ -35,6 +35,10 @@ const product = new mongoose.Schema(
             of : String
         },
 
+        type : {
+            type : String
+        },
+        
         embedding : [Number]
 
     },

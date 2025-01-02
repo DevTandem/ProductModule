@@ -1,10 +1,8 @@
 const product_model = require("../model/product_model")
-const log_model = require("../model/log_maintain");
-const { spawn } = require('child_process');
 const axios = require('axios');
 
 const create_product = async (req, res) => {
-    const { c_name, s_name, price, description, colour, characteristics } = req.body;
+    const { c_name, s_name, price, description, colour, characteristics , type } = req.body;
     const owner = req.user;
 
     if (!owner) {
@@ -16,6 +14,12 @@ const create_product = async (req, res) => {
     }
 
     try {
+        const types = ["unit","volume","weight","length","pieces"]
+
+        if(!types.includes(type)){
+            return res.status(400).json("Invalid type")    
+        }
+
         const productText = `${c_name} ${s_name} ${description || ""} ${Array.isArray(colour) ? colour.join(', ') : ""} color ${Object.entries(characteristics || {}).map(([key, value]) => `${key} ${value}`).join(' ')}`;
 
         const embedding = await callPythonForEmbedding(productText);
@@ -28,6 +32,7 @@ const create_product = async (req, res) => {
             description: description || "",
             colour: colour,
             characteristics: characteristics,
+            type : type,
             embedding: embedding 
         });
 

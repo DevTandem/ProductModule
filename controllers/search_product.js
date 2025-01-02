@@ -1,4 +1,3 @@
-const { spawn } = require('child_process');
 const product_model = require("../model/product_model");
 const axios = require('axios');
 
